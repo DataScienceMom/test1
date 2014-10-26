@@ -1,0 +1,54 @@
+Practical Machine Learning Assignment
+===================================================
+
+## Load Packages and Training Data.
+
+Load package caret and package ggplot2.
+
+```{r}
+library(caret)
+library(ggplot2)
+```
+
+Loading training data.
+
+```{r}
+directory <- "c://Users//Kelvin Wong//Desktop//Coursera" 
+setwd(directory)
+training <- read.csv("pml-training.csv",header=TRUE,row.names=1)
+testing <- read.csv("pml-testing.csv",header=TRUE,row.names=1)
+```
+
+## Data Cleaning
+
+Remove features with most observations are NA and zero covariates.
+
+```{r}
+# remove NA features from training data
+training_removeNA <- training[, colSums(is.na(training)) < 100]
+# remove the same features from the testing data
+testing_removeNA <- testing[, colSums(is.na(training)) < 100]
+
+# remove the near zero covariates
+nsv <- nearZeroVar(training_removeNA, saveMetrics=TRUE)
+training <- training_removeNA[,nsv$nzv == FALSE]
+# remove the same features from the testing data
+testing <- testing_removeNA[nsv$nzv == FALSE]
+rm(training_removeNA, testing_removeNA)
+```
+
+## Model Selection 
+
+As the number of features is large, I choose to use Decision Tree with cross validation. 
+
+```{r}
+train_control <- trainControl(method="cv",number=10,repeats=2)
+modFit <- train(classe~., data=training, trControl=train_control,method="rpart")
+```
+
+## Out of Sample Error
+
+```{r}
+prediction<-predict(modFit,newdata=training)
+confusionMatrix(prediction, training$classe)
+```
